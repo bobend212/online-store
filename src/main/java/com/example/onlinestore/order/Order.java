@@ -22,8 +22,6 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
-    // private BigDecimal totalPrice;
-
     @OneToMany(mappedBy = "order")
     private List<OrderItem> orderItems;
 }

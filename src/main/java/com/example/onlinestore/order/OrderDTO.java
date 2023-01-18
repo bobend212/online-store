@@ -16,8 +16,11 @@ public class OrderDTO {
 
     private OrderStatus orderStatus;
 
+    @With
     private BigDecimal totalPrice;
 
-    private List<OrderItemDTO> orderItemsFromDTO;
+    private List<OrderItemDTO> orderItems;
+
+
 
 }
