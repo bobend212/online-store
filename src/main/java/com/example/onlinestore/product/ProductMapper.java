@@ -9,7 +9,7 @@ public interface ProductMapper {
 
     ProductMapper MAPPER = Mappers.getMapper(ProductMapper.class);
 
-    @Mapping(target = "productId", source = "id")
+    // @Mapping(target = "productId", source = "id")
     ProductDTO productToDto(Product product);
 
     @Mapping(target = "id", ignore = true)

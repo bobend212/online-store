@@ -4,8 +4,7 @@ import com.example.onlinestore.orderItem.OrderItem;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
-import java.util.Set;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -23,8 +22,8 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus;
 
-    private BigDecimal totalPrice;
+    // private BigDecimal totalPrice;
 
     @OneToMany(mappedBy = "order")
-    private Set<OrderItem> orderItems;
+    private List<OrderItem> orderItems;
 }
