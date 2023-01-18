@@ -1,16 +1,13 @@
 package com.example.onlinestore.product;
 
-import lombok.*;
-
 import java.math.BigDecimal;
 
-@Getter
-@Setter
+import lombok.Builder;
+import lombok.Data;
+
+@Data
 @Builder
-public class ProductDTO {
-
-    private Long productId;
-
+public class ProductUpdateDTO {
     private String name;
 
     private BigDecimal price;
@@ -18,5 +15,4 @@ public class ProductDTO {
     private Integer stockQty;
 
     private Boolean inStock;
-
 }

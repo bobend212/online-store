@@ -1,7 +1,5 @@
 package com.example.onlinestore.product;
 
-import java.util.List;
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -14,7 +12,7 @@ public interface ProductMapper {
     @Mapping(target = "productId", source = "id")
     ProductDTO productToDto(Product product);
 
-    // @Mapping(target = "productId", source = "id")
-    // List<ProductDTO> productListToDto(List<Product> products);
+    @Mapping(target = "id", ignore = true)
+    Product createRequestDtoToProduct(ProductCreateDTO product);
 
 }

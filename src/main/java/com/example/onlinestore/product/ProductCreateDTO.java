@@ -16,12 +16,4 @@ public class ProductCreateDTO {
 
     private Boolean inStock;
 
-    static Product of(ProductCreateDTO productCreateDTO) {
-        return Product.builder()
-                .name(productCreateDTO.getName())
-                .price(productCreateDTO.getPrice())
-                .stockQty(productCreateDTO.getStockQty())
-                .inStock(productCreateDTO.getInStock())
-                .build();
-    }
 }
