@@ -2,6 +2,9 @@ package com.example.onlinestore.product;
 
 import org.springframework.stereotype.Service;
 
+import com.example.onlinestore.exception.NotFoundException;
+
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -26,7 +29,7 @@ public class ProductService {
     public ProductDTO getSingleProductById(Long productId) {
         return productRepository.findById(productId).map(productEntity -> {
             return productMapper.productToDto(productEntity);
-        }).orElseThrow(() -> new RuntimeException("Test exc"));
+        }).orElseThrow(() -> new NotFoundException(MessageFormat.format("Product with ID: {0} not found.", productId)));
 
         // Product product = productRepository.findById(productId).get();
         // return productMapper.productToDto(product);
