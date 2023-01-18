@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 @Builder
 public class ProductDTO {
 
+    private Long productId;
+
     private String name;
 
     private BigDecimal price;
@@ -17,12 +19,13 @@ public class ProductDTO {
 
     private Boolean inStock;
 
-    public static ProductDTO toDto(Product product) {
-        return ProductDTO.builder()
-                .name(product.getName())
-                .price(product.getPrice())
-                .stockQty(product.getStockQty())
-                .inStock(product.getInStock())
-                .build();
-    }
+    // public static ProductDTO toDto(Product product) {
+    // return ProductDTO.builder()
+    // .id(product.getId())
+    // .name(product.getName())
+    // .price(product.getPrice())
+    // .stockQty(product.getStockQty())
+    // .inStock(product.getInStock())
+    // .build();
+    // }
 }
