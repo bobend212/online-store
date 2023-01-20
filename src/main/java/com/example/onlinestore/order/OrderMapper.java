@@ -1,10 +1,12 @@
 package com.example.onlinestore.order;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
 
-    OrderDTO orderToDto(Order order) ;
+    @Mapping(target = "totalPrice", ignore = true)
+    OrderDTO orderToDto(Order order);
 
 }
