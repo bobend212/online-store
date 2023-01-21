@@ -10,6 +10,7 @@ import com.example.onlinestore.exception.ProductInTheOrderException;
 import com.example.onlinestore.exception.ProductNotAvailableException;
 import com.example.onlinestore.orderItem.OrderItem;
 import com.example.onlinestore.orderItem.OrderItemRepository;
+import com.example.onlinestore.product.Product;
 import com.example.onlinestore.product.ProductRepository;
 
 import jakarta.transaction.Transactional;
@@ -110,11 +111,15 @@ public class OrderService {
             return e;
         }).orElse(List.of(findOrderItem));
 
-        findOrder.setOrderStatus(OrderStatus.PROCESSING);
+        orderItemRepository.delete(findOrderItem);
+
+        if(findOrder.getOrderItems().size() == 0) {
+            findOrder.setOrderStatus(OrderStatus.EMPTY);
+        } else {
+            findOrder.setOrderStatus(OrderStatus.PROCESSING);
+        }
         findOrder.setOrderItems(orderItemsToReturn);
         orderRepository.save(findOrder);
-
-        orderItemRepository.delete(findOrderItem);
 
         findProduct.setStockQty((findProduct.getStockQty() + findOrderItem.getQty()));
         findProduct.setInStock(findProduct.getStockQty() <= 0 ? false : true);
@@ -127,8 +132,7 @@ public class OrderService {
 
     private Boolean checkIfProductIsAlreadyInTheOrder(OrderAddProductDTO requestBody) {
         return orderRepository.findById(requestBody.getOrderId()).get().getOrderItems().stream()
-                .filter(product -> product.getId().equals(requestBody.getProductId()))
-                .findFirst().isPresent();
+                .anyMatch(product -> product.getId().equals(requestBody.getProductId()));
     }
 
     private Boolean checkProductStockQty(OrderAddProductDTO requestBody) {
@@ -138,9 +142,7 @@ public class OrderService {
     }
 
     private Boolean checkIfProductIsAvailable(OrderAddProductDTO requestBody) {
-        return productRepository.findById(requestBody.getProductId()).map(product -> {
-            return product.getInStock();
-        }).orElse(false);
+        return productRepository.findById(requestBody.getProductId()).map(Product::getInStock).orElse(false);
     }
 
     private BigDecimal calculateTotalPrice(List<OrderItem> orderItems) {
