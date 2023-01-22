@@ -28,7 +28,6 @@ class ProductController {
         return new ResponseEntity<>(productService.getSingleProductById(productId), HttpStatus.OK);
     }
 
-    // todo: BadRequest instead 500
     @PostMapping()
     public ResponseEntity<ProductDTO> addProduct(@Valid @RequestBody ProductCreateDTO productCreateDTO) {
         return new ResponseEntity<>(productService.addProduct(productCreateDTO), HttpStatus.CREATED);

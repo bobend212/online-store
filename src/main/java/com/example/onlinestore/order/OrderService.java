@@ -2,6 +2,7 @@ package com.example.onlinestore.order;
 
 import java.math.BigDecimal;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ public class OrderService {
     private final OrderMapper orderMapper;
 
     public OrderService(OrderRepository orderRepository, OrderMapper orderMapper,
-            OrderItemRepository orderItemRepository, ProductRepository productRepository) {
+                        OrderItemRepository orderItemRepository, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
         this.orderItemRepository = orderItemRepository;
@@ -37,6 +38,30 @@ public class OrderService {
         return orderRepository.findAll().stream().map(order -> {
             return orderMapper.orderToDto(order).withTotalPrice(updateTotalPrice(order));
         }).toList();
+    }
+
+    public OrderDTO getSingleOrder(Long orderId) {
+        return orderRepository.findById(orderId).map(order -> {
+            return orderMapper.orderToDto(order).withTotalPrice(updateTotalPrice(order));
+        }).orElseThrow(() -> new NotFoundException(
+                MessageFormat.format("Order with ID: {0} not found.", orderId)));
+    }
+
+    public OrderDTO createNewOrder() {
+        return orderMapper.orderToDto(orderRepository.save(Order.builder()
+                .orderStatus(OrderStatus.EMPTY)
+                .build()));
+    }
+
+    public OrderDTO clearOrder(Long orderId) {
+        return orderRepository.findById(orderId).map(order -> {
+            orderItemRepository.deleteAllInBatch(order.getOrderItems());
+            order.setOrderStatus(OrderStatus.EMPTY);
+            order.setOrderItems(Collections.emptyList());
+            orderRepository.save(order);
+            return orderMapper.orderToDto(order);
+        }).orElseThrow(() -> new NotFoundException(
+                MessageFormat.format("Order with ID: {0} not found.", orderId)));
     }
 
     @Transactional
@@ -84,7 +109,7 @@ public class OrderService {
         orderRepository.save(findOrder);
 
         findProduct.setStockQty((findProduct.getStockQty() - requestBody.getQty()));
-        findProduct.setInStock(findProduct.getStockQty() <= 0 ? false : true);
+        findProduct.setInStock(findProduct.getStockQty() > 0);
         productRepository.save(findProduct);
 
         return orderMapper.orderToDto(findOrder).withTotalPrice(updateTotalPrice(findOrder));
@@ -113,7 +138,7 @@ public class OrderService {
 
         orderItemRepository.delete(findOrderItem);
 
-        if(findOrder.getOrderItems().size() == 0) {
+        if (findOrder.getOrderItems().size() == 0) {
             findOrder.setOrderStatus(OrderStatus.EMPTY);
         } else {
             findOrder.setOrderStatus(OrderStatus.PROCESSING);
@@ -122,13 +147,49 @@ public class OrderService {
         orderRepository.save(findOrder);
 
         findProduct.setStockQty((findProduct.getStockQty() + findOrderItem.getQty()));
-        findProduct.setInStock(findProduct.getStockQty() <= 0 ? false : true);
+        findProduct.setInStock(findProduct.getStockQty() > 0);
         productRepository.save(findProduct);
 
         return orderMapper.orderToDto(findOrder).withTotalPrice(updateTotalPrice(findOrder));
     }
 
-    // change product qty in the order METHOD
+    @Transactional
+    public OrderDTO changeProductQtyInOrder(OrderAddProductDTO requestBody) {
+        var findOrder = orderRepository.findById(requestBody.getOrderId())
+                .orElseThrow(() -> new NotFoundException(
+                        MessageFormat.format("Order with ID: {0} not found.", requestBody.getOrderId())));
+
+        var findProduct = productRepository.findById(requestBody.getProductId())
+                .orElseThrow(() -> new NotFoundException(
+                        MessageFormat.format("Product with ID: {0} not found.", requestBody.getProductId())));
+
+        var findOrderItem = orderRepository.findById(requestBody.getOrderId()).get().getOrderItems().stream()
+                .filter(product -> product.getProduct().getId().equals(requestBody.getProductId())).findFirst()
+                .orElseThrow(() -> new NotFoundException(
+                        MessageFormat.format("Product with ID: {0} is not associated with this order.", requestBody.getProductId())));
+
+        if (findOrderItem.getQty() > requestBody.getQty()) {
+            findProduct.setStockQty((findProduct.getStockQty() + findOrderItem.getQty() - requestBody.getQty()));
+            findProduct.setInStock(findProduct.getStockQty() > 0);
+        } else {
+            findProduct.setStockQty((findProduct.getStockQty() - Math.abs(findOrderItem.getQty() - requestBody.getQty())));
+            findProduct.setInStock(findProduct.getStockQty() > 0);
+        }
+
+        if (findProduct.getStockQty() < 0) {
+            throw new ProductNotAvailableException(
+                    MessageFormat.format("Not enough stock quantity for Product ID: {0}.",
+                            requestBody.getProductId()));
+        } else {
+            productRepository.save(findProduct);
+        }
+
+        findOrderItem.setQty(requestBody.getQty());
+        orderItemRepository.save(findOrderItem);
+
+        return orderMapper.orderToDto(findOrder).withTotalPrice(updateTotalPrice(findOrder));
+    }
+
 
     private Boolean checkIfProductIsAlreadyInTheOrder(OrderAddProductDTO requestBody) {
         return orderRepository.findById(requestBody.getOrderId()).get().getOrderItems().stream()
