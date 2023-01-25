@@ -25,7 +25,8 @@ public class ProductService {
 
     public ProductDTO getSingleProductById(Long productId) {
         return productRepository.findById(productId).map(productMapper::productToDto)
-                .orElseThrow(() -> new NotFoundException(MessageFormat.format("Product with ID: {0} not found.", productId)));
+                .orElseThrow(() -> new NotFoundException(
+                        MessageFormat.format("Product with ID: {0} not found.", productId)));
     }
 
     public ProductDTO addProduct(ProductCreateDTO productCreateDTO) {
