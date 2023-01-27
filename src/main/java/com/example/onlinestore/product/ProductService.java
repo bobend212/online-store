@@ -33,7 +33,6 @@ public class ProductService {
                 .name(productCreateDTO.getName())
                 .price(productCreateDTO.getPrice())
                 .stockQty(productCreateDTO.getStockQty())
-                .inStock(productCreateDTO.getInStock())
                 .build()));
     }
 
@@ -42,7 +41,6 @@ public class ProductService {
             product.setName(productUpdate.getName());
             product.setPrice(productUpdate.getPrice());
             product.setStockQty(productUpdate.getStockQty());
-            product.setInStock(productUpdate.getInStock());
             return productMapper.productToDto(productRepository.save(product));
         }).orElseThrow(() -> new NotFoundException(MessageFormat.format("Product with ID: {0} not found.", productId)));
     }

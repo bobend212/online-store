@@ -41,7 +41,6 @@ class ProductControllerTest {
                                 .name("product1")
                                 .price(new BigDecimal("20"))
                                 .stockQty(100)
-                                .inStock(true)
                                 .build()))
                         .contentType("application/json"))
                 .andExpect(status().isCreated());

@@ -26,6 +26,4 @@ public class Product {
 
     private Integer stockQty;
 
-    private Boolean inStock;
-
 }

@@ -17,6 +17,4 @@ public class ProductDTO {
 
     private Integer stockQty;
 
-    private Boolean inStock;
-
 }

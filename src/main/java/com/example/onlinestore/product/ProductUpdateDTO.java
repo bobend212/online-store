@@ -13,6 +13,4 @@ public class ProductUpdateDTO {
     private BigDecimal price;
 
     private Integer stockQty;
-
-    private Boolean inStock;
 }

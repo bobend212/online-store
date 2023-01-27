@@ -81,12 +81,6 @@ public class OrderService {
                             requestBody.getProductId(), findProduct.getName()));
         }
 
-        if (!checkIfProductIsAvailable(requestBody)) {
-            throw new ProductNotAvailableException(
-                    MessageFormat.format("Product with ID: {0} is not available.",
-                            requestBody.getProductId()));
-        }
-
         if (!checkProductStockQty(requestBody)) {
             throw new ProductNotAvailableException(
                     MessageFormat.format("Not enough stock quantity for Product ID: {0}. Current stock is {1}.",
@@ -109,7 +103,6 @@ public class OrderService {
         orderRepository.save(findOrder);
 
         findProduct.setStockQty((findProduct.getStockQty() - requestBody.getQty()));
-        findProduct.setInStock(findProduct.getStockQty() > 0);
         productRepository.save(findProduct);
 
         return orderMapper.orderToDto(findOrder).withTotalPrice(updateTotalPrice(findOrder));
@@ -147,7 +140,6 @@ public class OrderService {
         orderRepository.save(findOrder);
 
         findProduct.setStockQty((findProduct.getStockQty() + findOrderItem.getQty()));
-        findProduct.setInStock(findProduct.getStockQty() > 0);
         productRepository.save(findProduct);
 
         return orderMapper.orderToDto(findOrder).withTotalPrice(updateTotalPrice(findOrder));
@@ -170,10 +162,8 @@ public class OrderService {
 
         if (findOrderItem.getQty() > requestBody.getQty()) {
             findProduct.setStockQty((findProduct.getStockQty() + findOrderItem.getQty() - requestBody.getQty()));
-            findProduct.setInStock(findProduct.getStockQty() > 0);
         } else {
             findProduct.setStockQty((findProduct.getStockQty() - Math.abs(findOrderItem.getQty() - requestBody.getQty())));
-            findProduct.setInStock(findProduct.getStockQty() > 0);
         }
 
         if (findProduct.getStockQty() < 0) {
@@ -200,10 +190,6 @@ public class OrderService {
         return productRepository.findById(requestBody.getProductId())
                 .map(product -> product.getStockQty() >= requestBody.getQty()
         ).orElse(false);
-    }
-
-    private Boolean checkIfProductIsAvailable(OrderAddProductDTO requestBody) {
-        return productRepository.findById(requestBody.getProductId()).map(Product::getInStock).orElse(false);
     }
 
     private BigDecimal calculateTotalPrice(List<OrderItem> orderItems) {
