@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.example.onlinestore.exception.NotFoundException;
@@ -53,8 +54,22 @@ public class OrderService {
                 .build()));
     }
 
+    @Transactional
     public OrderDTO clearOrder(Long orderId) {
         return orderRepository.findById(orderId).map(order -> {
+
+            var findAssociatedOrderProducts = orderItemRepository.findAllByOrderId(orderId)
+                    .stream().map(OrderItem::getProduct).toList();
+
+            findAssociatedOrderProducts.forEach(product -> {
+                var findQtyForOrderItem = orderItemRepository.findAllByOrderId(orderId)
+                        .stream().filter(o -> Objects.equals(o.getOrder().getId(), orderId)
+                                && Objects.equals(o.getProduct().getId(), product.getId()))
+                        .mapToInt(OrderItem::getQty).findFirst().orElseThrow();
+
+                product.setStockQty(product.getStockQty() + findQtyForOrderItem);
+            });
+
             orderItemRepository.deleteAllInBatch(order.getOrderItems());
             order.setOrderStatus(OrderStatus.EMPTY);
             order.setOrderItems(Collections.emptyList());
@@ -183,13 +198,13 @@ public class OrderService {
 
     private Boolean checkIfProductIsAlreadyInTheOrder(OrderAddProductDTO requestBody) {
         return getSingleOrder(requestBody.getOrderId()).getOrderItems().stream()
-                        .anyMatch(product -> product.getProduct().getId().equals((requestBody.getProductId())));
+                .anyMatch(product -> product.getProduct().getId().equals((requestBody.getProductId())));
     }
 
     private Boolean checkProductStockQty(OrderAddProductDTO requestBody) {
         return productRepository.findById(requestBody.getProductId())
                 .map(product -> product.getStockQty() >= requestBody.getQty()
-        ).orElse(false);
+                ).orElse(false);
     }
 
     private BigDecimal calculateTotalPrice(List<OrderItem> orderItems) {
