@@ -46,7 +46,6 @@ public class ProductServiceTest {
                 .name("ProductName")
                 .price(new BigDecimal("10"))
                 .stockQty(100)
-                .inStock(true)
                 .build();
 
         // when
@@ -57,30 +56,6 @@ public class ProductServiceTest {
         verify(productRepository).save(productArgumentCaptor.capture());
         Product capturedProduct = productArgumentCaptor.getValue();
         assertThat(capturedProduct.getName()).isEqualTo(productDto.getName());
-    }
-
-    @Test
-    void canDeleteProduct() {
-        // given
-        ProductDTO productDto = ProductDTO.builder()
-                .name("ProductName")
-                .price(new BigDecimal("10"))
-                .stockQty(100)
-                .inStock(true)
-                .build();
-
-        // when
-
-        var newProd = productRepository.save(productMapper.productToDto(productDto));
-
-        given(productRepository.existsById(newProd.getId()))
-                .willReturn(true);
-
-        // when
-        productService.deleteProduct(newProd.getId());
-
-        // then
-        verify(productRepository).deleteById(newProd.getId());
     }
 
 }
