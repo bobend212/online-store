@@ -12,7 +12,6 @@ import com.example.onlinestore.exception.ProductInTheOrderException;
 import com.example.onlinestore.exception.ProductNotAvailableException;
 import com.example.onlinestore.orderItem.OrderItem;
 import com.example.onlinestore.orderItem.OrderItemRepository;
-import com.example.onlinestore.product.Product;
 import com.example.onlinestore.product.ProductRepository;
 
 import jakarta.transaction.Transactional;
@@ -52,6 +51,27 @@ public class OrderService {
         return orderMapper.orderToDto(orderRepository.save(Order.builder()
                 .orderStatus(OrderStatus.EMPTY)
                 .build()));
+    }
+
+    @Transactional
+    public Boolean deleteOrder(Long orderId) {
+        return orderRepository.findById(orderId).map(order -> {
+
+            var findAssociatedOrderProducts = orderItemRepository.findAllByOrderId(orderId)
+                    .stream().map(OrderItem::getProduct).toList();
+
+            findAssociatedOrderProducts.forEach(product -> {
+                var findQtyForOrderItem = orderItemRepository.findAllByOrderId(orderId)
+                        .stream().filter(o -> Objects.equals(o.getOrder().getId(), orderId)
+                                && Objects.equals(o.getProduct().getId(), product.getId()))
+                        .mapToInt(OrderItem::getQty).findFirst().orElseThrow();
+
+                product.setStockQty(product.getStockQty() + findQtyForOrderItem);
+            });
+
+            orderRepository.delete(order);
+            return true;
+        }).orElseThrow(() -> new NotFoundException(MessageFormat.format("Order with ID: {0} not found.", orderId)));
     }
 
     @Transactional

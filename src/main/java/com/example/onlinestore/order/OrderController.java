@@ -33,6 +33,11 @@ public class OrderController {
         return new ResponseEntity<>(orderService.clearOrder(orderId), HttpStatus.OK);
     }
 
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<Boolean> deleteOrder(@PathVariable Long orderId) {
+        return new ResponseEntity<>(orderService.deleteOrder(orderId), HttpStatus.OK);
+    }
+
     @PostMapping("/new-order")
     public ResponseEntity<OrderDTO> createNewOrder() {
         return new ResponseEntity<>(orderService.createNewOrder(), HttpStatus.CREATED);
