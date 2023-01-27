@@ -75,16 +75,16 @@ public class OrderService {
                 .orElseThrow(() -> new NotFoundException(
                         MessageFormat.format("Product with ID: {0} not found.", requestBody.getProductId())));
 
-        if (!checkIfProductIsAvailable(requestBody)) {
-            throw new ProductNotAvailableException(
-                    MessageFormat.format("Product with ID: {0} is not available.",
-                            requestBody.getProductId()));
-        }
-
         if (checkIfProductIsAlreadyInTheOrder(requestBody)) {
             throw new ProductInTheOrderException(
                     MessageFormat.format("Product ID: {0} ({1}) is in the order already.",
                             requestBody.getProductId(), findProduct.getName()));
+        }
+
+        if (!checkIfProductIsAvailable(requestBody)) {
+            throw new ProductNotAvailableException(
+                    MessageFormat.format("Product with ID: {0} is not available.",
+                            requestBody.getProductId()));
         }
 
         if (!checkProductStockQty(requestBody)) {
@@ -192,14 +192,14 @@ public class OrderService {
 
 
     private Boolean checkIfProductIsAlreadyInTheOrder(OrderAddProductDTO requestBody) {
-        return orderRepository.findById(requestBody.getOrderId()).get().getOrderItems().stream()
-                .anyMatch(product -> product.getId().equals(requestBody.getProductId()));
+        return getSingleOrder(requestBody.getOrderId()).getOrderItems().stream()
+                        .anyMatch(product -> product.getProduct().getId().equals((requestBody.getProductId())));
     }
 
     private Boolean checkProductStockQty(OrderAddProductDTO requestBody) {
-        return productRepository.findById(requestBody.getProductId()).map(product -> {
-            return product.getStockQty() >= requestBody.getQty() ? true : false;
-        }).orElse(false);
+        return productRepository.findById(requestBody.getProductId())
+                .map(product -> product.getStockQty() >= requestBody.getQty()
+        ).orElse(false);
     }
 
     private Boolean checkIfProductIsAvailable(OrderAddProductDTO requestBody) {
