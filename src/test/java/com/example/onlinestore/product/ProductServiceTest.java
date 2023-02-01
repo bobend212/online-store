@@ -11,8 +11,6 @@ import static org.mockito.Mockito.verify;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-import static org.mockito.BDDMockito.given;
-
 import java.math.BigDecimal;
 
 @ExtendWith(MockitoExtension.class)

@@ -38,7 +38,7 @@ public class OrderController {
         return new ResponseEntity<>(orderService.deleteOrder(orderId), HttpStatus.OK);
     }
 
-    @PostMapping("/new-order")
+    @PostMapping()
     public ResponseEntity<OrderDTO> createNewOrder() {
         return new ResponseEntity<>(orderService.createNewOrder(), HttpStatus.CREATED);
     }
@@ -53,7 +53,7 @@ public class OrderController {
         return new ResponseEntity<>(orderService.removeProductFromOrder(orderId, productId), HttpStatus.OK);
     }
 
-    @PutMapping("/change-product-qty")
+    @PutMapping("/change-product-quantity")
     public ResponseEntity<OrderDTO> changeProductQtyInTheOrder(@Valid @RequestBody OrderAddProductDTO requestBody) {
         return new ResponseEntity<>(orderService.changeProductQtyInOrder(requestBody), HttpStatus.OK);
     }

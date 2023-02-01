@@ -13,7 +13,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.math.BigDecimal;
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,54 +20,39 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class ProductControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    ProductRepository productRepository;
+        @Autowired
+        ProductRepository productRepository;
 
-    @BeforeEach
-    void cleanUp() {
-        productRepository.deleteAll();
-    }
+        @BeforeEach
+        void cleanUp() {
+                productRepository.deleteAll();
+        }
 
-    ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-    @Test
-    void shouldCreateOneProductAndGetListOfProducts() throws Exception {
-        mockMvc.perform(post("/api/v1/products")
-                        .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
-                                .name("product1")
-                                .price(new BigDecimal("20"))
-                                .stockQty(100)
-                                .build()))
-                        .contentType("application/json"))
-                .andExpect(status().isCreated());
+        @Test
+        void shouldCreateOneProductAndGetListOfProducts() throws Exception {
+                mockMvc.perform(post("/api/v1/products")
+                                .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
+                                                .name("product1")
+                                                .price(new BigDecimal("20"))
+                                                .stockQty(100)
+                                                .build()))
+                                .contentType("application/json"))
+                                .andExpect(status().isCreated());
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/products"))
-                .andExpect(status().isOk())
-                .andReturn();
+                MvcResult mvcResult = mockMvc.perform(get("/api/v1/products"))
+                                .andExpect(status().isOk())
+                                .andReturn();
 
-        var products =
-                Arrays.asList(objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product[].class));
+                var products = Arrays.asList(
+                                objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product[].class));
 
-        Assertions.assertEquals(1, products.size());
-        Assertions.assertEquals("product1", products.get(0).getName());
-    }
+                Assertions.assertEquals(1, products.size());
+                Assertions.assertEquals("product1", products.get(0).getName());
+        }
 
-    @Test
-    void getSingleProduct() {
-    }
-
-    @Test
-    void addProduct() {
-    }
-
-    @Test
-    void updateProduct() {
-    }
-
-    @Test
-    void deleteProduct() {
-    }
 }
