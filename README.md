@@ -3,10 +3,9 @@ RESTful API was created for learning purposes which simulates the shopping proce
 
 ## Features
 
-- RESTful routing
+- RESTful
 - Models with proper relationships (one-to-many, one-to-one)
 - Custom Exception handling
-- RESTful errors
 - H2 database
 - Lombok
 - MapStruct
