@@ -2,7 +2,7 @@ package com.example.onlinestore.product;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,39 +20,55 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class ProductControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @Autowired
-        ProductRepository productRepository;
+    @Autowired
+    private ProductService productService;
 
-        @BeforeEach
-        void cleanUp() {
-                productRepository.deleteAll();
-        }
+    ObjectMapper objectMapper = new ObjectMapper();
 
-        ObjectMapper objectMapper = new ObjectMapper();
+    @Test
+    @Order(1)
+    void should_update_stock_quantity_after_order_delete() throws Exception {
 
-        @Test
-        void should_create_and_return_list_of_products() throws Exception {
-                mockMvc.perform(post("/api/v1/products")
-                                .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
-                                                .name("product1")
-                                                .price(new BigDecimal("20"))
-                                                .stockQty(100)
-                                                .build()))
-                                .contentType("application/json"))
-                                .andExpect(status().isCreated());
+        mockMvc.perform(delete("/api/v1/orders/1"))
+                .andExpect(status().isOk())
+                .andReturn();
 
-                MvcResult mvcResult = mockMvc.perform(get("/api/v1/products"))
-                                .andExpect(status().isOk())
-                                .andReturn();
+        var result = productService.getSingleProductById(1L).getStockQty();
 
-                var products = Arrays.asList(
-                                objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product[].class));
+        Assertions.assertEquals(15, result);
+    }
 
-                Assertions.assertEquals(1, products.size());
-                Assertions.assertEquals("product1", products.get(0).getName());
-        }
+    @Test
+    @Order(2)
+    void should_create_and_return_list_of_products() throws Exception {
+
+        objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
+                .name("product1")
+                .price(new BigDecimal("20"))
+                .stockQty(100)
+                .build());
+
+        mockMvc.perform(post("/api/v1/products")
+                        .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
+                                .name("product1")
+                                .price(new BigDecimal("20"))
+                                .stockQty(100)
+                                .build()))
+                        .contentType("application/json"))
+                .andExpect(status().isCreated());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/products"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        var products = Arrays.asList(
+                objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product[].class));
+
+        Assertions.assertEquals(4, products.size());
+    }
+
 
 }

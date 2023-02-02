@@ -1,20 +1,22 @@
 package com.example.onlinestore.product;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.example.onlinestore.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
 
+    @InjectMocks
     private ProductService productService;
 
     @Mock
@@ -23,46 +25,22 @@ public class ProductServiceTest {
     @Mock
     private ProductMapper productMapper;
 
-    @BeforeEach
-    void setUp() {
-        productService = new ProductService(productRepository, productMapper);
-    }
-
     @Test
-    void should_find_all_products() {
+    void should_throw_notFoundException_when_product_not_exist() {
 
-        when(productRepository.findAll()).thenReturn(
-                List.of(Product.builder().name("Sausage").price(new BigDecimal("5")).stockQty(100).build()));
+        //given
+        when(productRepository.findById(1L)).thenReturn(Optional.empty());
 
-        List<ProductDTO> actualService = productService.getAllProducts();
-        List<Product> actualRepo = productRepository.findAll();
+        //when
+        //then
+        Exception exception = assertThrows(NotFoundException.class, () -> {
+            productService.getSingleProductById(1L);
+        });
 
-        assertTrue(actualService.size() > 0);
-    }
+        String expectedMessage = "Product with ID: 1 not found.";
+        String actualMessage = exception.getMessage();
 
-    @Test
-    void should_create_product() {
-
-    }
-
-    @Test
-    void should_find_product_by_id() {
-
-    }
-
-    @Test
-    void should_update_product_by_id() {
-
-    }
-
-    @Test
-    void should_delete_product_by_id() {
-
-    }
-
-    @Test
-    void should_throw_exception_when_product_not_exist() {
-
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 
 }

@@ -1,22 +1,21 @@
 package com.example.onlinestore.order;
 
+import com.example.onlinestore.exception.NotFoundException;
+import com.example.onlinestore.exception.ProductInTheOrderException;
+import com.example.onlinestore.exception.ProductNotAvailableException;
+import com.example.onlinestore.orderItem.OrderItem;
+import com.example.onlinestore.orderItem.OrderItemRepository;
+import com.example.onlinestore.product.Product;
+import com.example.onlinestore.product.ProductRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import com.example.onlinestore.exception.NotFoundException;
-import com.example.onlinestore.exception.ProductInTheOrderException;
-import com.example.onlinestore.exception.ProductNotAvailableException;
-import com.example.onlinestore.orderItem.OrderItem;
-import com.example.onlinestore.orderItem.OrderItemRepository;
-import com.example.onlinestore.product.ProductRepository;
-
-import jakarta.transaction.Transactional;
-
-import org.springframework.stereotype.Service;
 
 @Service
 public class OrderService {
@@ -35,16 +34,15 @@ public class OrderService {
     }
 
     public List<OrderDTO> getAllOrders() {
-        return orderRepository.findAll().stream().map(order -> {
-            return orderMapper.orderToDto(order).withTotalPrice(updateTotalPrice(order));
-        }).toList();
+        return orderRepository.findAll().stream().map(order ->
+                orderMapper.orderToDto(order).withTotalPrice(updateTotalPrice(order))).toList();
     }
 
     public OrderDTO getSingleOrder(Long orderId) {
-        return orderRepository.findById(orderId).map(order -> {
-            return orderMapper.orderToDto(order).withTotalPrice(updateTotalPrice(order));
-        }).orElseThrow(() -> new NotFoundException(
-                MessageFormat.format("Order with ID: {0} not found.", orderId)));
+        return orderRepository.findById(orderId).map(order ->
+                        orderMapper.orderToDto(order).withTotalPrice(updateTotalPrice(order)))
+                .orElseThrow(() -> new NotFoundException(
+                        MessageFormat.format("Order with ID: {0} not found.", orderId)));
     }
 
     public OrderDTO createNewOrder() {
@@ -55,48 +53,52 @@ public class OrderService {
 
     @Transactional
     public Boolean deleteOrder(Long orderId) {
-        return orderRepository.findById(orderId).map(order -> {
+        return orderRepository.findById(orderId).map(order ->
+                        deleteSpecifiedAndRestoreProductsQuantity(orderId, order))
+                .orElseThrow(() ->
+                        new NotFoundException(MessageFormat.format("Order with ID: {0} not found.", orderId)));
+    }
 
-            var findAssociatedOrderProducts = orderItemRepository.findAllByOrderId(orderId)
-                    .stream().map(OrderItem::getProduct).toList();
+    private boolean deleteSpecifiedAndRestoreProductsQuantity(Long orderId, Order order) {
+        var associatedOrderItems = orderItemRepository.findAllByOrderId(orderId);
+        var associatedProducts = associatedOrderItems.stream().map(OrderItem::getProduct).toList();
 
-            findAssociatedOrderProducts.forEach(product -> {
-                var findQtyForOrderItem = orderItemRepository.findAllByOrderId(orderId)
-                        .stream().filter(o -> Objects.equals(o.getOrder().getId(), orderId)
-                                && Objects.equals(o.getProduct().getId(), product.getId()))
-                        .mapToInt(OrderItem::getQty).findFirst().orElseThrow();
+        restoreProductsQuantity(orderId, associatedOrderItems, associatedProducts);
 
-                product.setStockQty(product.getStockQty() + findQtyForOrderItem);
-            });
+        orderRepository.delete(order);
+        return true;
+    }
 
-            orderRepository.delete(order);
-            return true;
-        }).orElseThrow(() -> new NotFoundException(MessageFormat.format("Order with ID: {0} not found.", orderId)));
+    private static void restoreProductsQuantity(Long orderId, List<OrderItem> associatedOrderItems, List<Product> associatedProducts) {
+        associatedProducts.forEach(product -> {
+            var findQtyForOrderItem = associatedOrderItems
+                    .stream().filter(o -> Objects.equals(o.getOrder().getId(), orderId)
+                            && Objects.equals(o.getProduct().getId(), product.getId()))
+                    .mapToInt(OrderItem::getQty).findFirst().orElseThrow();
+
+            product.setStockQty(product.getStockQty() + findQtyForOrderItem);
+        });
     }
 
     @Transactional
     public OrderDTO clearOrder(Long orderId) {
-        return orderRepository.findById(orderId).map(order -> {
+        return orderRepository.findById(orderId).map(order ->
+                        clearOrderAndRestoreProductsStockQuantity(orderId, order))
+                .orElseThrow(() -> new NotFoundException(
+                        MessageFormat.format("Order with ID: {0} not found.", orderId)));
+    }
 
-            var findAssociatedOrderProducts = orderItemRepository.findAllByOrderId(orderId)
-                    .stream().map(OrderItem::getProduct).toList();
+    private OrderDTO clearOrderAndRestoreProductsStockQuantity(Long orderId, Order order) {
+        var findAssociatedOrderProducts = orderItemRepository.findAllByOrderId(orderId)
+                .stream().map(OrderItem::getProduct).toList();
 
-            findAssociatedOrderProducts.forEach(product -> {
-                var findQtyForOrderItem = orderItemRepository.findAllByOrderId(orderId)
-                        .stream().filter(o -> Objects.equals(o.getOrder().getId(), orderId)
-                                && Objects.equals(o.getProduct().getId(), product.getId()))
-                        .mapToInt(OrderItem::getQty).findFirst().orElseThrow();
+        restoreProductsQuantity(orderId, orderItemRepository.findAllByOrderId(orderId), findAssociatedOrderProducts);
 
-                product.setStockQty(product.getStockQty() + findQtyForOrderItem);
-            });
-
-            orderItemRepository.deleteAllInBatch(order.getOrderItems());
-            order.setOrderStatus(OrderStatus.EMPTY);
-            order.setOrderItems(Collections.emptyList());
-            orderRepository.save(order);
-            return orderMapper.orderToDto(order);
-        }).orElseThrow(() -> new NotFoundException(
-                MessageFormat.format("Order with ID: {0} not found.", orderId)));
+        orderItemRepository.deleteAllInBatch(order.getOrderItems());
+        order.setOrderStatus(OrderStatus.EMPTY);
+        order.setOrderItems(Collections.emptyList());
+        orderRepository.save(order);
+        return orderMapper.orderToDto(order);
     }
 
     @Transactional
