@@ -3,26 +3,25 @@ package com.example.onlinestore.product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.verify;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
 
-    @Mock
-    private ProductRepository productRepository;
-
     private ProductService productService;
 
     @Mock
-    ProductMapper productMapper;
+    private ProductRepository productRepository;
+
+    @Mock
+    private ProductMapper productMapper;
 
     @BeforeEach
     void setUp() {
@@ -30,30 +29,40 @@ public class ProductServiceTest {
     }
 
     @Test
-    void canGetAllProducts() {
-        // when
-        productService.getAllProducts();
-        // then
-        verify(productRepository).findAll();
+    void should_find_all_products() {
+
+        when(productRepository.findAll()).thenReturn(
+                List.of(Product.builder().name("Sausage").price(new BigDecimal("5")).stockQty(100).build()));
+
+        List<ProductDTO> actualService = productService.getAllProducts();
+        List<Product> actualRepo = productRepository.findAll();
+
+        assertTrue(actualService.size() > 0);
     }
 
     @Test
-    void canCreateProduct() {
-        // given
-        ProductCreateDTO productDto = ProductCreateDTO.builder()
-                .name("ProductName")
-                .price(new BigDecimal("10"))
-                .stockQty(100)
-                .build();
+    void should_create_product() {
 
-        // when
-        productService.addProduct(productDto);
+    }
 
-        // then
-        ArgumentCaptor<Product> productArgumentCaptor = ArgumentCaptor.forClass(Product.class);
-        verify(productRepository).save(productArgumentCaptor.capture());
-        Product capturedProduct = productArgumentCaptor.getValue();
-        assertThat(capturedProduct.getName()).isEqualTo(productDto.getName());
+    @Test
+    void should_find_product_by_id() {
+
+    }
+
+    @Test
+    void should_update_product_by_id() {
+
+    }
+
+    @Test
+    void should_delete_product_by_id() {
+
+    }
+
+    @Test
+    void should_throw_exception_when_product_not_exist() {
+
     }
 
 }

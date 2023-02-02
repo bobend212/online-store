@@ -34,7 +34,7 @@ class ProductControllerTest {
         ObjectMapper objectMapper = new ObjectMapper();
 
         @Test
-        void shouldCreateOneProductAndGetListOfProducts() throws Exception {
+        void should_create_and_return_list_of_products() throws Exception {
                 mockMvc.perform(post("/api/v1/products")
                                 .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
                                                 .name("product1")
