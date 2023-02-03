@@ -1,8 +1,8 @@
 package com.example.onlinestore.product;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.math.BigDecimal;
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,55 +21,76 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class ProductControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ProductService productService;
+        @Autowired
+        private ProductService productService;
 
-    ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-    @Test
-    @Order(1)
-    void should_update_stock_quantity_after_order_delete() throws Exception {
+        @Test
+        void should_create_and_return_list_of_products() throws Exception {
 
-        mockMvc.perform(delete("/api/v1/orders/1"))
-                .andExpect(status().isOk())
-                .andReturn();
+                mockMvc.perform(post("/api/v1/products")
+                                .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
+                                                .name("product1")
+                                                .price(new BigDecimal("20"))
+                                                .stockQty(100)
+                                                .build()))
+                                .contentType("application/json"))
+                                .andExpect(status().isCreated());
 
-        var result = productService.getSingleProductById(1L).getStockQty();
+                MvcResult mvcResult = mockMvc.perform(get("/api/v1/products"))
+                                .andExpect(status().isOk())
+                                .andReturn();
 
-        Assertions.assertEquals(15, result);
-    }
+                var products = Arrays.asList(
+                                objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product[].class));
 
-    @Test
-    @Order(2)
-    void should_create_and_return_list_of_products() throws Exception {
+                Assertions.assertEquals(4, products.size());
+        }
 
-        objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
-                .name("product1")
-                .price(new BigDecimal("20"))
-                .stockQty(100)
-                .build());
+        @Test
+        void should_update_all_product_fields() throws Exception {
 
-        mockMvc.perform(post("/api/v1/products")
-                        .content(objectMapper.writeValueAsBytes(ProductCreateDTO.builder()
-                                .name("product1")
-                                .price(new BigDecimal("20"))
-                                .stockQty(100)
-                                .build()))
-                        .contentType("application/json"))
-                .andExpect(status().isCreated());
+                var productToUpdate = ProductUpdateDTO.builder()
+                                .name("Sausage")
+                                .price(new BigDecimal("15"))
+                                .stockQty(500)
+                                .build();
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/products"))
-                .andExpect(status().isOk())
-                .andReturn();
+                mockMvc.perform(put("/api/v1/products/1")
+                                .contentType("application/json")
+                                .content(objectMapper.writeValueAsBytes(productToUpdate)))
+                                .andExpect(status().isOk());
 
-        var products = Arrays.asList(
-                objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product[].class));
+                MvcResult mvcResult = mockMvc.perform(get("/api/v1/products/1"))
+                                .andExpect(status().isOk())
+                                .andReturn();
 
-        Assertions.assertEquals(4, products.size());
-    }
+                var product = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), Product.class);
 
+                Assertions.assertAll(() -> {
+                        assertEquals("Sausage", product.getName());
+                        assertEquals(new BigDecimal("15.00"), product.getPrice());
+                        assertEquals(500, product.getStockQty());
+                });
+
+        }
+
+        @Test
+        void should_delete_product() throws Exception {
+
+                var productsCountBeforeDelete = productService.getAllProducts().size();
+
+                mockMvc.perform(delete("/api/v1/products/3"))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                var productsCountAfterDelete = productService.getAllProducts().size();
+
+                Assertions.assertEquals(productsCountBeforeDelete - 1, productsCountAfterDelete);
+        }
 
 }

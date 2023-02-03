@@ -10,6 +10,8 @@ import lombok.*;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OrderDTO {
 
     private Long id;
@@ -20,7 +22,5 @@ public class OrderDTO {
     private BigDecimal totalPrice;
 
     private List<OrderItemDTO> orderItems;
-
-
 
 }
